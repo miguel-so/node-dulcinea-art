@@ -43,7 +43,6 @@ export const getArtworks = async (req: Request, res: Response) => {
           {
             model: User,
             as: 'artist',
-            attributes: ['id', 'username', 'email', 'profileImage'],
           },
         ],
         order: [['createdAt', 'DESC']],
@@ -62,7 +61,6 @@ export const getArtworks = async (req: Request, res: Response) => {
         {
           model: User,
           as: 'artist',
-          attributes: ['id', 'username', 'email', 'profileImage'],
         },
       ],
       order: [['createdAt', 'DESC']],
@@ -97,7 +95,6 @@ export const getArtwork = async (req: Request, res: Response) => {
         {
           model: User,
           as: 'artist',
-          attributes: ['id', 'name', 'email', 'profileImage', 'contactInfo']
         }
       ]
     });

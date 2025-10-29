@@ -5,10 +5,9 @@ import { Artwork, User } from '../models';
 interface ContactForm {
   name: string;
   email: string;
-  subject: string;
+  phone: string;
   message: string;
   artworkId?: string;
-  artistId?: string;
 }
 
 // @desc    Send contact message
@@ -16,37 +15,20 @@ interface ContactForm {
 // @access  Public
 export const sendContactMessage = async (req: Request, res: Response) => {
   try {
-    const { name, email, subject, message, artworkId, artistId }: ContactForm = req.body;
+    const { name, email, phone, message, artworkId }: ContactForm = req.body;
 
     let artistEmail = '';
     let artistName = '';
     let artworkTitle = '';
-
-    // Get artist information
-    if (artistId) {
-      const artist = await User.findByPk(artistId);
-      if (artist) {
-        artistEmail = artist.email;
-        artistName = artist.username;
-      }
-    }
-
     // Get artwork information if provided
     if (artworkId) {
-      const artwork = await Artwork.findByPk(artworkId, {
-        include: [
-          {
-            model: User,
-            as: 'artist',
-            attributes: ['name', 'email']
-          }
-        ]
-      });
+      const artwork = await Artwork.findByPk(artworkId);
       if (artwork) {
         artworkTitle = artwork.title;
-        if (!artistEmail && (artwork as any).artist) {
-          artistEmail = (artwork as any).artist.email;
-          artistName = (artwork as any).artist.name;
+        const artist = await User.findByPk(artwork.artistId);
+        if (artist) {
+          artistEmail = (artist as any).email;
+          artistName = (artist as any).username;
         }
       }
     }
@@ -54,7 +36,7 @@ export const sendContactMessage = async (req: Request, res: Response) => {
     if (!artistEmail) {
       return res.status(404).json({
         success: false,
-        message: 'Artist not found'
+        message: 'Artist not found',
       });
     }
 
@@ -62,61 +44,68 @@ export const sendContactMessage = async (req: Request, res: Response) => {
     const artistMessage = `
 Hello ${artistName},
 
-You have received a new inquiry about your artwork${artworkTitle ? ` "${artworkTitle}"` : ''}.
+You have received a new inquiry about your artwork${
+      artworkTitle ? ` "${artworkTitle}"` : ''
+    }.
 
 From: ${name} (${email})
-Subject: ${subject}
+Phone: ${phone || 'Not provided'}
 
 Message:
 ${message}
 
-Please respond directly to ${email} to continue the conversation.
+Please respond directly to ${email} or call ${
+      phone || 'them'
+    } to continue the conversation.
 
 Best regards,
 Dulcinea-Art Team
-    `;
+`;
 
     // Create email message for customer (confirmation)
     const customerMessage = `
 Hello ${name},
 
-Thank you for your interest in the artwork${artworkTitle ? ` "${artworkTitle}"` : ''} by ${artistName}.
+Thank you for your interest in the artwork${
+      artworkTitle ? ` "${artworkTitle}"` : ''
+    } by ${artistName}.
 
-Your message has been sent to the artist, and they will respond directly to you at ${email}.
+Your message has been sent to the artist, and they will respond directly to you at ${email} or via phone at ${
+      phone || 'Not provided'
+    }.
 
 Your message:
-Subject: ${subject}
-Message: ${message}
+${message}
 
 We hope you find the perfect artwork for your collection!
 
 Best regards,
 Dulcinea-Art Team
-    `;
+`;
 
     // Send email to artist
     await sendEmail({
       email: artistEmail,
-      subject: `New Artwork Inquiry: ${subject}`,
-      message: artistMessage
+      subject: `New Artwork Inquiry`,
+      message: artistMessage,
     });
 
     // Send confirmation email to customer
     await sendEmail({
       email: email,
       subject: `Confirmation: Your message to ${artistName}`,
-      message: customerMessage
+      message: customerMessage,
     });
 
     res.json({
       success: true,
-      message: 'Message sent successfully'
+      message: 'Message sent successfully',
     });
   } catch (error: any) {
     console.error('Contact form error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to send message. Please try again later.'
+      message: 'Failed to send message. Please try again later.',
     });
   }
 };
