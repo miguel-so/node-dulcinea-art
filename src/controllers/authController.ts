@@ -275,6 +275,7 @@ export const forgotPassword = async (req: Request, res: Response) => {
         message: 'Reset code sent to your email'
       });
     } catch (error) {
+      console.log("error", error)
       await User.update(
         {
           resetPasswordCode: undefined,
