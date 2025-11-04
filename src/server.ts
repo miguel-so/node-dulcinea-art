@@ -22,23 +22,9 @@ dotenv.config();
 
 const app = express();
 
-const allowedOrigins = [
-  process.env.FRONTEND_URL || "https://react-dulcinea-art.vercel.app/",
-];
-
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps, curl)
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("CORS not allowed for this origin"));
-      }
-    },
-    credentials: true, // if using cookies, auth headers, etc.
-  })
-);
+app.use(cors({ origin: "*" }));
+// OR, if using credentials (cookies, auth headers):
+// app.use(cors({ origin: true, credentials: true }));
 
 // Serve static files from /public/artworks
 app.use("/artworks", express.static(path.join(__dirname, "public/artworks")));
