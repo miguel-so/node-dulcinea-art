@@ -22,7 +22,9 @@ dotenv.config();
 
 const app = express();
 
-const allowedOrigins = [process.env.FRONTEND_URL || "http://localhost:3000"];
+const allowedOrigins = [
+  process.env.FRONTEND_URL || "https://react-dulcinea-art.vercel.app/",
+];
 
 app.use(
   cors({
