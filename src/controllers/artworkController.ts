@@ -1,6 +1,9 @@
-import { Request, Response } from 'express';
-import { Artwork, User } from '../models';
-import { Op } from 'sequelize';
+import fs from "fs";
+import path from "path";
+
+import { Request, Response } from "express";
+import { Artwork, User } from "../models";
+import { Op } from "sequelize";
 
 interface AuthRequest extends Request {
   user?: any;
@@ -10,7 +13,7 @@ interface AuthRequest extends Request {
 // @route   GET /api/artworks
 // @access  Public
 export const getArtworks = async (req: Request, res: Response) => {
-  const all = req.query.all === 'true';
+  const all = req.query.all === "true";
 
   const page = parseInt(req.query.page as string, 10) || 1;
   const limit = parseInt(req.query.limit as string, 10) || 10;
@@ -32,7 +35,7 @@ export const getArtworks = async (req: Request, res: Response) => {
     }
 
     if (req.query.sold !== undefined) {
-      whereClause.sold = req.query.sold === 'true';
+      whereClause.sold = req.query.sold === "true";
     }
 
     // If "all" is true, return all artworks without pagination
@@ -42,10 +45,10 @@ export const getArtworks = async (req: Request, res: Response) => {
         include: [
           {
             model: User,
-            as: 'artist',
+            as: "artist",
           },
         ],
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
       });
 
       return res.status(200).json({
@@ -55,18 +58,20 @@ export const getArtworks = async (req: Request, res: Response) => {
     }
 
     // Paginated query
-    const { count: totalCount, rows: artworks } = await Artwork.findAndCountAll({
-      where: whereClause,
-      include: [
-        {
-          model: User,
-          as: 'artist',
-        },
-      ],
-      order: [['createdAt', 'DESC']],
-      limit,
-      offset,
-    });
+    const { count: totalCount, rows: artworks } = await Artwork.findAndCountAll(
+      {
+        where: whereClause,
+        include: [
+          {
+            model: User,
+            as: "artist",
+          },
+        ],
+        order: [["createdAt", "DESC"]],
+        limit,
+        offset,
+      }
+    );
 
     // Return response in same structure as getAllCategories
     res.status(200).json({
@@ -78,9 +83,9 @@ export const getArtworks = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    console.error('Error fetching artworks:', error);
+    console.error("Error fetching artworks:", error);
     res.status(500).json({
-      message: 'An error occurred while fetching artworks',
+      message: "An error occurred while fetching artworks",
     });
   }
 };
@@ -94,26 +99,26 @@ export const getArtwork = async (req: Request, res: Response) => {
       include: [
         {
           model: User,
-          as: 'artist',
-        }
-      ]
+          as: "artist",
+        },
+      ],
     });
 
     if (!artwork) {
       return res.status(404).json({
         success: false,
-        message: 'Artwork not found'
+        message: "Artwork not found",
       });
     }
 
     res.json({
       success: true,
-      data: artwork
+      data: artwork,
     });
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -123,11 +128,25 @@ export const getArtwork = async (req: Request, res: Response) => {
 // @access  Private (Artist)
 export const createArtwork = async (req: Request, res: Response) => {
   try {
-    const { title, categoryId, size, media, printNumber, inventoryNumber, status, price, location, notes } =
-      req.body;
+    const {
+      title,
+      categoryId,
+      size,
+      media,
+      printNumber,
+      inventoryNumber,
+      status,
+      price,
+      location,
+      notes,
+    } = req.body;
 
-    const thumbnail = req.files && (req.files as any).thumbnail ? (req.files as any).thumbnail[0] : null;
-    const images = req.files && (req.files as any).images ? (req.files as any).images : [];
+    const thumbnail =
+      req.files && (req.files as any).thumbnail
+        ? (req.files as any).thumbnail[0]
+        : null;
+    const images =
+      req.files && (req.files as any).images ? (req.files as any).images : [];
 
     const artwork = await Artwork.create({
       title,
@@ -150,14 +169,13 @@ export const createArtwork = async (req: Request, res: Response) => {
       data: artwork,
     });
   } catch (error: any) {
-    console.error('Error creating artwork:', error);
+    console.error("Error creating artwork:", error);
     res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
-
 
 // @desc    Update artwork
 // @route   PUT /api/artworks/:id
@@ -169,32 +187,32 @@ export const updateArtwork = async (req: AuthRequest, res: Response) => {
     if (!artwork) {
       return res.status(404).json({
         success: false,
-        message: 'Artwork not found'
+        message: "Artwork not found",
       });
     }
 
     // Make sure user is artwork owner or super admin
-    if (artwork.artistId !== req.user!.id && req.user!.role !== 'super_admin') {
+    if (artwork.artistId !== req.user!.id && req.user!.role !== "super_admin") {
       return res.status(401).json({
         success: false,
-        message: 'Not authorized to update this artwork'
+        message: "Not authorized to update this artwork",
       });
     }
 
     await Artwork.update(req.body, {
-      where: { id: req.params.id }
+      where: { id: req.params.id },
     });
 
     const updatedArtwork = await Artwork.findByPk(req.params.id);
 
     res.json({
       success: true,
-      data: updatedArtwork
+      data: updatedArtwork,
     });
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };
@@ -209,30 +227,52 @@ export const deleteArtwork = async (req: AuthRequest, res: Response) => {
     if (!artwork) {
       return res.status(404).json({
         success: false,
-        message: 'Artwork not found'
+        message: "Artwork not found",
       });
     }
 
     // Make sure user is artwork owner or super admin
-    if (artwork.artistId !== req.user!.id && req.user!.role !== 'super_admin') {
+    if (artwork.artistId !== req.user!.id && req.user!.role !== "super_admin") {
       return res.status(401).json({
         success: false,
-        message: 'Not authorized to delete this artwork'
+        message: "Not authorized to delete this artwork",
       });
     }
 
+    // Folder where artwork files are stored
+    const uploadDir = path.join(__dirname, "../public/artworks");
+
+    // Safely delete file function
+    const deleteFile = (filename: string | null) => {
+      if (!filename) return;
+      const filePath = path.join(uploadDir, filename);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    };
+
+    // Delete thumbnail
+    deleteFile(artwork.thumbnail);
+
+    // Delete images array
+    if (Array.isArray(artwork.images)) {
+      artwork.images.forEach((img) => deleteFile(img));
+    }
+
+    // Delete from DB
     await Artwork.destroy({
-      where: { id: req.params.id }
+      where: { id: req.params.id },
     });
 
-    res.json({
+    return res.json({
       success: true,
-      message: 'Artwork deleted successfully'
+      message: "Artwork deleted successfully",
     });
   } catch (error: any) {
-    res.status(400).json({
+    console.error("Delete artwork error:", error);
+    return res.status(500).json({
       success: false,
-      message: error.message
+      message: error.message || "Server error",
     });
   }
 };
@@ -247,21 +287,21 @@ export const getArtworksByArtist = async (req: Request, res: Response) => {
       include: [
         {
           model: User,
-          as: 'artist',
-          attributes: ['id', 'name', 'email', 'profileImage']
-        }
+          as: "artist",
+          attributes: ["id", "name", "email", "profileImage"],
+        },
       ],
-      order: [['createdAt', 'DESC']]
+      order: [["createdAt", "DESC"]],
     });
 
     res.json({
       success: true,
-      data: artworks
+      data: artworks,
     });
   } catch (error: any) {
     res.status(400).json({
       success: false,
-      message: error.message
+      message: error.message,
     });
   }
 };

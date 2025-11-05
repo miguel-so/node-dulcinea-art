@@ -1,14 +1,14 @@
-import { DataTypes, Model, Optional } from 'sequelize';
-import sequelize from '../config/database';
-import User from './User';
-import { ArtworkStatus } from '../utils/types';
+import { DataTypes, Model, Optional } from "sequelize";
+import sequelize from "../config/database";
+import User from "./User";
+import { ArtworkStatus } from "../utils/types";
 
 interface ArtworkAttributes {
   id: number;
   title: string;
   description?: string;
-  thumbnail?: string;            // single main image
-  images?: string[];             // multiple image filenames
+  thumbnail?: string; // single main image
+  images?: string[]; // multiple image filenames
   size: string;
   media?: string;
   printNumber?: string;
@@ -28,21 +28,21 @@ interface ArtworkAttributes {
 interface ArtworkCreationAttributes
   extends Optional<
     ArtworkAttributes,
-    | 'id'
-    | 'description'
-    | 'thumbnail'
-    | 'images'
-    | 'media'
-    | 'printNumber'
-    | 'inventoryNumber'
-    | 'price'
-    | 'location'
-    | 'notes'
-    | 'sold'
-    | 'categoryId'
-    | 'tags'
-    | 'createdAt'
-    | 'updatedAt'
+    | "id"
+    | "description"
+    | "thumbnail"
+    | "images"
+    | "media"
+    | "printNumber"
+    | "inventoryNumber"
+    | "price"
+    | "location"
+    | "notes"
+    | "sold"
+    | "categoryId"
+    | "tags"
+    | "createdAt"
+    | "updatedAt"
   > {}
 
 class Artwork
@@ -52,7 +52,7 @@ class Artwork
   public id!: number;
   public title!: string;
   public description?: string;
-  public thumbnail?: string;
+  public thumbnail!: string;
   public images?: string[];
   public size!: string;
   public media?: string;
@@ -145,7 +145,7 @@ Artwork.init(
       allowNull: false,
       references: {
         model: User,
-        key: 'id',
+        key: "id",
       },
     },
     categoryId: {
@@ -169,20 +169,20 @@ Artwork.init(
   },
   {
     sequelize,
-    modelName: 'Artwork',
-    tableName: 'artworks',
+    modelName: "Artwork",
+    tableName: "artworks",
     timestamps: true,
     indexes: [
-      { fields: ['artistId'] },
-      { fields: ['sold'] },
-      { fields: ['categoryId'] },
-      { type: 'FULLTEXT', fields: ['title', 'description'] },
+      { fields: ["artistId"] },
+      { fields: ["sold"] },
+      { fields: ["categoryId"] },
+      { type: "FULLTEXT", fields: ["title", "description"] },
     ],
   }
 );
 
 // Define associations
-User.hasMany(Artwork, { foreignKey: 'artistId', as: 'artworks' });
-Artwork.belongsTo(User, { foreignKey: 'artistId', as: 'artist' });
+User.hasMany(Artwork, { foreignKey: "artistId", as: "artworks" });
+Artwork.belongsTo(User, { foreignKey: "artistId", as: "artist" });
 
 export default Artwork;
